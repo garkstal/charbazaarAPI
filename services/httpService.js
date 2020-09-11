@@ -11,10 +11,12 @@ async function getRequest(url) {
   };
 
   try {
+    console.log("Starting request for: ", url);
     const { data } = await axios.get(url, options);
+    console.log("Response recived from: ", url);
     return data;
   } catch (error) {
-    console.log(error);
+    console.log("Couldn't recive from: ", url, error);
   }
 }
 
