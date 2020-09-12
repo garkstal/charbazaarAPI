@@ -26,11 +26,9 @@ function getOfferPagesCount(data) {
   return offersPageCount;
 }
 
-function getAuctionsFromPage(webContent) {
-  const $ = cheerio.load(webContent);
-
+function scrapAuctionIds(cheerioData) {
   const auctionsIds = [];
-  $("a").each((i, e) => {
+  cheerioData("a").each((i, e) => {
     if (e.attribs.href) {
       var _url = e.attribs.href;
       var pattern = auctionIdPattern;
@@ -43,8 +41,12 @@ function getAuctionsFromPage(webContent) {
     }
   });
 
+  return auctionsIds;
+}
+
+function scrapCharacterData(cheerioData) {
   const charactersData = [];
-  const headers = $(".AuctionHeader").text();
+  const headers = cheerioData(".AuctionHeader").text();
   const headersPattern = auctionHeaderPattern;
   var result = headers.match(headersPattern);
 
@@ -66,17 +68,33 @@ function getAuctionsFromPage(webContent) {
     }
   }
 
+  return charactersData;
+}
+
+function scrapAuctionBids(cheerioData) {
+  var bid;
+  var bidData = cheerioData(".ShortAuctionDataValue").text();
+
+  console.log(bidData);
+}
+
+function getAuctionsFromPage(webContent) {
+  const $ = cheerio.load(webContent);
+
+  var auctionsIds = scrapAuctionIds($);
+  var auctionsCharacters = scrapCharacterData($);
+
   var auctions = [];
-  for (var i = 0; i < charactersData.length; i++) {
+  for (var i = 0; i < auctionsCharacters.length; i++) {
     var auction = {
       auctionId: auctionsIds[i],
-      auctionedCharacter: charactersData[i],
+      auctionedCharacter: auctionsCharacters[i],
     };
 
     auctions.push(auction);
   }
 
-  console.log(auctions);
+  return auctions;
 }
 
 const forLoop = async (_) => {
