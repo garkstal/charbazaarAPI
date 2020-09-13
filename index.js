@@ -1,25 +1,14 @@
-const { getRequest } = require("./services/httpService");
-const {
-  getOfferPagesCount,
-  getAuctionsFromPage,
-} = require("./services/scrappingService");
-const cheerio = require("cheerio");
+const express = require("express");
+const app = express();
+const config = require("config");
 
-async function main() {
-  var mainPageData = await getRequest(
-    "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades"
-  );
+require("./startup/db")();
+require("./startup/cors")(app);
+require("./startup/routes")(app);
+require("./startup/validation")();
 
-  var offersPageCount = getOfferPagesCount(mainPageData);
-
-  var offersPage = await getRequest(
-    "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&filter_profession=0&filter_levelrangefrom=0&filter_levelrangeto=0&filter_world=&filter_worldpvptype=9&filter_worldbattleyestate=0&filter_skillid=&filter_skillrangefrom=0&filter_skillrangeto=0&order_column=101&order_direction=1&currentpage=2"
-  );
-  /*
-  getAuctionsFromPage(offersPage);
-*/
-  const $ = cheerio.load(offersPage);
-  console.log($(".ShortAuctionDataValue").text());
-}
-
-main();
+const port = process.env.PORT || config.get("port");
+app.listen(port, () => {
+  console.log(`Server runnig at port ${port}/`);
+});
+//require("./startup/webScrapper")();

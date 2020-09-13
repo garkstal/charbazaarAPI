@@ -3,7 +3,9 @@ const {
   offersPagePattern,
   auctionIdPattern,
   auctionHeaderPattern,
+  auctionDatesAndBidPattern,
 } = require("../helpers/regexPatterns");
+const { convertMonthShortcutToNumber } = require("../utils/utils");
 
 function getOfferPagesCount(data) {
   const $ = cheerio.load(data);
@@ -11,8 +13,7 @@ function getOfferPagesCount(data) {
   $("a").each((i, e) => {
     if (e.attribs.href) {
       var _url = e.attribs.href;
-      var pattern = offersPagePattern;
-      const result = _url.match(pattern);
+      const result = _url.match(offersPagePattern);
 
       if (result) {
         offersPageCount =
@@ -31,8 +32,7 @@ function scrapAuctionIds(cheerioData) {
   cheerioData("a").each((i, e) => {
     if (e.attribs.href) {
       var _url = e.attribs.href;
-      var pattern = auctionIdPattern;
-      const result = _url.match(pattern);
+      const result = _url.match(auctionIdPattern);
 
       if (result) {
         if (!auctionsIds.includes(Number(result[1])))
@@ -47,8 +47,7 @@ function scrapAuctionIds(cheerioData) {
 function scrapCharacterData(cheerioData) {
   const charactersData = [];
   const headers = cheerioData(".AuctionHeader").text();
-  const headersPattern = auctionHeaderPattern;
-  var result = headers.match(headersPattern);
+  var result = headers.match(auctionHeaderPattern);
 
   while (true) {
     const char = {};
@@ -64,18 +63,49 @@ function scrapCharacterData(cheerioData) {
       break;
     } else {
       result = result.input.substr(result[0].length, result.input.length);
-      result = result.match(headersPattern);
+      result = result.match(auctionHeaderPattern);
     }
   }
 
   return charactersData;
 }
 
-function scrapAuctionBids(cheerioData) {
-  var bid;
-  var bidData = cheerioData(".ShortAuctionDataValue").text();
+function scrapAuctionsDatesAndBid(cheerioData) {
+  const data = [];
+  const auctions = cheerioData(".ShortAuctionData").text();
+  var result = auctions.match(auctionDatesAndBidPattern);
 
-  console.log(bidData);
+  while (true) {
+    const info = {};
+    info.start = new Date(
+      result[3],
+      convertMonthShortcutToNumber(result[1]),
+      result[2],
+      result[4],
+      result[5]
+    );
+    info.end = new Date(
+      result[8],
+      convertMonthShortcutToNumber(result[6]),
+      result[7],
+      result[9],
+      result[10]
+    );
+
+    info.isBided = result[11] === "Minimum Bid" ? true : false;
+    info.bidValue = Number(result[12].replace(",", ""));
+
+    data.push(info);
+
+    if (result.input.length === result[0].length) {
+      break;
+    } else {
+      result = result.input.substr(result[0].length, result.input.length);
+      result = result.match(auctionDatesAndBidPattern);
+    }
+  }
+
+  return data;
 }
 
 function getAuctionsFromPage(webContent) {
@@ -83,12 +113,17 @@ function getAuctionsFromPage(webContent) {
 
   var auctionsIds = scrapAuctionIds($);
   var auctionsCharacters = scrapCharacterData($);
+  var auctionDatesAndBids = scrapAuctionsDatesAndBid($);
 
   var auctions = [];
-  for (var i = 0; i < auctionsCharacters.length; i++) {
+  for (var i = 0; i < auctionsIds.length; i++) {
     var auction = {
       auctionId: auctionsIds[i],
       auctionedCharacter: auctionsCharacters[i],
+      auctionBid: auctionDatesAndBids[i].bidValue,
+      auctionIsBided: auctionDatesAndBids[i].isBided,
+      auctionStart: auctionDatesAndBids[i].start,
+      auctionEnd: auctionDatesAndBids[i].end,
     };
 
     auctions.push(auction);
@@ -96,14 +131,6 @@ function getAuctionsFromPage(webContent) {
 
   return auctions;
 }
-
-const forLoop = async (_) => {
-  for (let index = 0; index < fruitsToGet.length; index++) {
-    const fruit = fruitsToGet[index];
-    const numFruit = await getNumFruit(fruit);
-    console.log(numFruit);
-  }
-};
 
 module.exports.getOfferPagesCount = getOfferPagesCount;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;

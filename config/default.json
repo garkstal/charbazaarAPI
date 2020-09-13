@@ -1,0 +1,4 @@
+{
+  "db": "mongodb://localhost/TibiaCharBaazar",
+  "port": "3900"
+}
