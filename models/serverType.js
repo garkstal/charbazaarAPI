@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const joi = require("joi");
+const Joi = require("joi");
 
 const serverTypeSchema = new mongoose.Schema({
   name: {
@@ -12,10 +12,10 @@ const ServerType = mongoose.model("ServerType", serverTypeSchema);
 
 function validateServerType(serverType) {
   const schema = {
-    name: joi.string().required(),
+    name: Joi.string().required(),
   };
 
-  return joi.validate(serverType, schema);
+  return Joi.validate(serverType, schema);
 }
 
 exports.ServerType = ServerType;

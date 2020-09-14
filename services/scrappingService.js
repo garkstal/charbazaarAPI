@@ -4,6 +4,7 @@ const {
   auctionIdPattern,
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
+  characterSkillsPattern,
 } = require("../helpers/regexPatterns");
 const { convertMonthShortcutToNumber } = require("../utils/utils");
 
@@ -106,6 +107,14 @@ function scrapAuctionsDatesAndBid(cheerioData) {
   }
 
   return data;
+}
+
+function scrapCharacterDetails(webContent) {
+  const result = webContent.match(characterSkillsPattern);
+}
+
+function getCharacterDetails(webContent) {
+  const $ = cheerio.load(webContent);
 }
 
 function getAuctionsFromPage(webContent) {
