@@ -5,8 +5,12 @@ const {
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
   characterSkillsPattern,
+  charmPointsPattern,
+  obtainedCharmsPattern,
+  imbuementsPattern,
 } = require("../helpers/regexPatterns");
 const { convertMonthShortcutToNumber } = require("../utils/utils");
+const { charms, imbuements } = require("../helpers/constants");
 
 function getOfferPagesCount(data) {
   const $ = cheerio.load(data);
@@ -109,12 +113,75 @@ function scrapAuctionsDatesAndBid(cheerioData) {
   return data;
 }
 
-function scrapCharacterDetails(webContent) {
-  const result = webContent.match(characterSkillsPattern);
+function scrapCharacterSkills(webContent) {
+  var result = webContent.match(characterSkillsPattern);
+  const skills = [];
+
+  while (true) {
+    skills.push({
+      type: result[1],
+      level: Number(result[2]),
+      progres: result[3],
+    });
+
+    newString = result.input.substr(result.index + result[0].length);
+    result = newString.match(characterSkillsPattern);
+
+    if (!result) break;
+  }
+
+  return skills;
+}
+
+function scrapCharacterCharms(webContent) {
+  var result = webContent.match(charmPointsPattern);
+
+  const data = {
+    expansion: result[1] === "yes" ? true : false,
+    unusedPoints: Number(result[2].replace(",", "")),
+    usedPoints: Number(result[3].replace(",", "")),
+  };
+
+  const availableCharms = [];
+  result = webContent.match(obtainedCharmsPattern);
+  while (true) {
+    if (charms.includes(result[1])) {
+      availableCharms.push(result[1]);
+    }
+
+    newString = result.input.substr(result.index + result[0].length);
+    result = newString.match(obtainedCharmsPattern);
+
+    if (!result) break;
+  }
+
+  data.availableCharms = availableCharms;
+
+  return data;
+}
+
+function scrapCharacterImbuements(webContent) {
+  const imbus = [];
+  result = webContent.match(imbuementsPattern);
+  while (true) {
+    if (imbuements.includes(result[1])) {
+      imbus.push(result[1]);
+    }
+
+    newString = result.input.substr(result.index + result[0].length);
+    result = newString.match(imbuementsPattern);
+
+    if (!result) break;
+  }
+
+  console.log(imbus);
+  return imbus;
 }
 
 function getCharacterDetails(webContent) {
-  const $ = cheerio.load(webContent);
+  const skills = scrapCharacterSkills(webContent);
+  const charms = scrapCharacterCharms(webContent);
+  const imbuements = scrapCharacterImbuements(webContent);
 }
 
 function getAuctionsFromPage(webContent) {
@@ -143,3 +210,4 @@ function getAuctionsFromPage(webContent) {
 
 module.exports.getOfferPagesCount = getOfferPagesCount;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;
+module.exports.scrapCharacterImbuements = scrapCharacterImbuements;

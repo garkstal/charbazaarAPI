@@ -2,10 +2,11 @@ const { getRequest } = require("../services/httpService");
 const {
   getOfferPagesCount,
   getAuctionsFromPage,
+  scrapCharacterImbuements,
 } = require("../services/scrappingService");
 
 module.exports = async function () {
-  var mainPageData = await getRequest(
+  /*var mainPageData = await getRequest(
     "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades"
   );
 
@@ -21,5 +22,10 @@ module.exports = async function () {
     currentOfferts.push(...offertsFromIndexPage);
   }
 
-  console.log(currentOfferts);
+  console.log(currentOfferts);*/
+  var req = await getRequest(
+    "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=90494&source=overview"
+  );
+
+  scrapCharacterImbuements(req);
 };
