@@ -16,8 +16,18 @@ async function getRequest(url) {
     console.log("Response recived from: ", url);
     return data;
   } catch (error) {
-    console.log("Couldn't recive from: ", url, error);
+    console.log("Couldn't recive response from: ", url, error);
+  }
+}
+
+async function dbGetRequest(uri) {
+  try {
+    const { data } = await axios.get(uri);
+    return data;
+  } catch (error) {
+    console.log(error);
   }
 }
 
 module.exports.getRequest = getRequest;
+module.exports.dbGetRequest = dbGetRequest;

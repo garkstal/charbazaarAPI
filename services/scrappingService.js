@@ -119,7 +119,7 @@ function scrapCharacterSkills(webContent) {
 
   while (true) {
     skills.push({
-      type: result[1],
+      name: result[1],
       level: Number(result[2]),
       progres: result[3],
     });
@@ -144,15 +144,17 @@ function scrapCharacterCharms(webContent) {
 
   const availableCharms = [];
   result = webContent.match(obtainedCharmsPattern);
-  while (true) {
-    if (charms.includes(result[1])) {
-      availableCharms.push(result[1]);
+  if (result) {
+    while (true) {
+      if (charms.includes(result[1])) {
+        availableCharms.push(result[1]);
+      }
+
+      newString = result.input.substr(result.index + result[0].length);
+      result = newString.match(obtainedCharmsPattern);
+
+      if (!result) break;
     }
-
-    newString = result.input.substr(result.index + result[0].length);
-    result = newString.match(obtainedCharmsPattern);
-
-    if (!result) break;
   }
 
   data.availableCharms = availableCharms;
@@ -163,18 +165,19 @@ function scrapCharacterCharms(webContent) {
 function scrapCharacterImbuements(webContent) {
   const imbus = [];
   result = webContent.match(imbuementsPattern);
-  while (true) {
-    if (imbuements.includes(result[1])) {
-      imbus.push(result[1]);
+  if (result) {
+    while (true) {
+      if (imbuements.includes(result[1])) {
+        imbus.push(result[1]);
+      }
+
+      newString = result.input.substr(result.index + result[0].length);
+      result = newString.match(imbuementsPattern);
+
+      if (!result) break;
     }
-
-    newString = result.input.substr(result.index + result[0].length);
-    result = newString.match(imbuementsPattern);
-
-    if (!result) break;
   }
 
-  console.log(imbus);
   return imbus;
 }
 
@@ -182,6 +185,8 @@ function getCharacterDetails(webContent) {
   const skills = scrapCharacterSkills(webContent);
   const charms = scrapCharacterCharms(webContent);
   const imbuements = scrapCharacterImbuements(webContent);
+
+  return { skills: skills, charms: charms, imbuements: imbuements };
 }
 
 function getAuctionsFromPage(webContent) {
@@ -194,10 +199,10 @@ function getAuctionsFromPage(webContent) {
   var auctions = [];
   for (var i = 0; i < auctionsIds.length; i++) {
     var auction = {
-      auctionId: auctionsIds[i],
-      auctionedCharacter: auctionsCharacters[i],
-      auctionBid: auctionDatesAndBids[i].bidValue,
-      auctionIsBided: auctionDatesAndBids[i].isBided,
+      id: auctionsIds[i],
+      character: auctionsCharacters[i],
+      bidValue: auctionDatesAndBids[i].bidValue,
+      isBided: auctionDatesAndBids[i].isBided,
       auctionStart: auctionDatesAndBids[i].start,
       auctionEnd: auctionDatesAndBids[i].end,
     };
@@ -210,4 +215,4 @@ function getAuctionsFromPage(webContent) {
 
 module.exports.getOfferPagesCount = getOfferPagesCount;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;
-module.exports.scrapCharacterImbuements = scrapCharacterImbuements;
+module.exports.getCharacterDetails = getCharacterDetails;

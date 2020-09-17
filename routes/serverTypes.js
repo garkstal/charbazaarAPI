@@ -9,10 +9,10 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const serverType = await ServerType.findOne({ name: req.body.name });
+  const serverType = await ServerType.findById(req.params.id);
 
-  if (serverType)
-    return res.status(400).send("Server Type with this name already exists.");
+  if (!serverType)
+    return res.status(404).send("Server Type with this ID does not exists.");
 
   res.send(serverType);
 });
