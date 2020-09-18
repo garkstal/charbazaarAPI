@@ -28,7 +28,8 @@ const characterSchema = new mongoose.Schema({
     required: true,
   },
   skills: {
-    type: [skillSchema],
+    //type: [skillSchema],
+    type: [String],
   },
   imbuements: {
     type: [String],

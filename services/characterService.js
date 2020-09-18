@@ -22,6 +22,15 @@ async function createCharacter(c) {
   }
 }
 
+async function getCharacters() {
+  try {
+    const { data } = await axios.get(endpoint);
+    return data;
+  } catch (error) {
+    console.log(error.response.data);
+  }
+}
+
 async function getCharacterByName(name) {
   try {
     const { data } = await axios.get(endpoint);
@@ -34,3 +43,4 @@ async function getCharacterByName(name) {
 
 module.exports.createCharacter = createCharacter;
 module.exports.getCharacterByName = getCharacterByName;
+module.exports.getCharacters = getCharacters;

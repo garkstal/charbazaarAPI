@@ -4,28 +4,40 @@ const { getRequest, dbGetRequest } = require("../services/httpService");
 const {
   createCharacter,
   getCharacterByName,
+  getCharacters,
 } = require("../services/characterService");
 const {
-  getOfferPagesCount,
+  offertsPageCountScrapper,
   getAuctionsFromPage,
   getCharacterDetails,
 } = require("../services/scrappingService");
 
-module.exports = async function () {
+async function main() {
   const port = config.get("port");
 
   const auctionsInDb = await dbGetRequest(
     "http://localhost:" + port + "/api/auctions"
   );
 
-  /*var mainPageData = await getRequest(
+  const offertsPageCount = await getOffersPageCount();
+  const currentOfferts = await getCurrentOfferts(offertsPageCount);
+  const auctionsToUpdate = getAuctionsToUpdate(currentOfferts, auctionsInDb);
+  await updateDbAuction(auctionsToUpdate);
+
+  console.log("Scrapping website finished.");
+}
+
+async function getOffersPageCount() {
+  var mainPageData = await getRequest(
     "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades"
   );
 
-  var offersPageCount = getOfferPagesCount(mainPageData);
-*/
+  return offertsPageCountScrapper(mainPageData);
+}
+
+async function getCurrentOfferts(offertsPageCount) {
   const currentOfferts = [];
-  for (let index = 1; index <= 1; index++) {
+  for (let index = 1; index <= offertsPageCount; index++) {
     var offersPage = await getRequest(
       `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&filter_profession=0&filter_levelrangefrom=0&filter_levelrangeto=0&filter_world=&filter_worldpvptype=9&filter_worldbattleyestate=0&filter_skillid=&filter_skillrangefrom=0&filter_skillrangeto=0&order_column=101&order_direction=1&currentpage=${index}`
     );
@@ -34,6 +46,10 @@ module.exports = async function () {
     currentOfferts.push(...offertsFromIndexPage);
   }
 
+  return currentOfferts;
+}
+
+function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
   const auctionsToUpdate = [];
   currentOfferts.forEach((co) => {
     const isInDb = auctionsInDb.find((a) => a.id === id);
@@ -46,32 +62,30 @@ module.exports = async function () {
     }
   });
 
-  for (var i = 0; i < auctionsToUpdate.length; i++) {
-    const data = auctionsToUpdate[i];
-    var character = await getCharacterByName(data.newValue.character.name);
-    if (
-      Object.keys(auctionsToUpdate[i].oldValue).length === 0 ||
-      character === null
-    ) {
+  return auctionsToUpdate;
+}
+
+async function updateDbAuction(auctions) {
+  const charactersInDb = await getCharacters();
+  for (var i = 0; i < auctions.length; i++) {
+    const data = auctions[i];
+    var character =
+      charactersInDb.find((c) => c.name === data.newValue.character.name) ||
+      null;
+    if (character === null) {
       var req = await getRequest(
         `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${data.newValue.id}&source=overview`
       );
 
-      if (character === null) {
-        const details = getCharacterDetails(req);
-        character = data.newValue.character;
-        character.skills = details.skills;
-        character.imbuements = details.imbuements;
-        character.charms = details.charms;
+      const details = getCharacterDetails(req);
+      character = data.newValue.character;
+      character.skills = details.skills;
+      character.imbuements = details.imbuements;
+      character.charms = details.charms;
 
-        await createCharacter(character);
-      }
+      await createCharacter(character);
     }
   }
-  /*
-  var req = await getRequest(
-    "https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=90494&source=overview"
-  );
+}
 
-  getCharacterDetails(req);*/
-};
+module.exports.main = main;

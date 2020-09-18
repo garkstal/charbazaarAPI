@@ -1,6 +1,6 @@
 const cheerio = require("cheerio");
 const {
-  offersPagePattern,
+  offertsPagePattern,
   auctionIdPattern,
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
@@ -12,24 +12,30 @@ const {
 const { convertMonthShortcutToNumber } = require("../utils/utils");
 const { charms, imbuements } = require("../helpers/constants");
 
-function getOfferPagesCount(data) {
+function offertsPageCountScrapper(data) {
   const $ = cheerio.load(data);
-  var offersPageCount = 0;
+  var offertsPageCount = 0;
   $("a").each((i, e) => {
     if (e.attribs.href) {
       var _url = e.attribs.href;
-      const result = _url.match(offersPagePattern);
+      const result = _url.match(offertsPagePattern);
 
       if (result) {
-        offersPageCount =
-          Number(result[1]) > offersPageCount
+        offertsPageCount =
+          Number(result[1]) > offertsPageCount
             ? Number(result[1])
-            : offersPageCount;
+            : offertsPageCount;
       }
     }
   });
 
-  return offersPageCount;
+  if (offertsPageCount === 0) {
+    console.error(
+      "----------------------------------KURWY ZMIENIŁY PATTERN W MAKSYMALNEJ LIBCZIE STRON, ZOBACZ ZIOMECZKU URL----------------------------------"
+    );
+  }
+
+  return offertsPageCount;
 }
 
 function scrapAuctionIds(cheerioData) {
@@ -118,11 +124,7 @@ function scrapCharacterSkills(webContent) {
   const skills = [];
 
   while (true) {
-    skills.push({
-      name: result[1],
-      level: Number(result[2]),
-      progres: result[3],
-    });
+    skills.push(result[1], result[2], result[3]);
 
     newString = result.input.substr(result.index + result[0].length);
     result = newString.match(characterSkillsPattern);
@@ -142,12 +144,12 @@ function scrapCharacterCharms(webContent) {
     usedPoints: Number(result[3].replace(",", "")),
   };
 
-  const availableCharms = [];
+  const available = [];
   result = webContent.match(obtainedCharmsPattern);
   if (result) {
     while (true) {
       if (charms.includes(result[1])) {
-        availableCharms.push(result[1]);
+        available.push(result[1]);
       }
 
       newString = result.input.substr(result.index + result[0].length);
@@ -157,7 +159,7 @@ function scrapCharacterCharms(webContent) {
     }
   }
 
-  data.availableCharms = availableCharms;
+  data.available = available;
 
   return data;
 }
@@ -213,6 +215,6 @@ function getAuctionsFromPage(webContent) {
   return auctions;
 }
 
-module.exports.getOfferPagesCount = getOfferPagesCount;
+module.exports.offertsPageCountScrapper = offertsPageCountScrapper;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;
 module.exports.getCharacterDetails = getCharacterDetails;
