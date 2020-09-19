@@ -39,6 +39,20 @@ router.post("/", async (req, res) => {
   res.send(_auction);
 });
 
+router.put("/:id", async (req, res) => {
+  const auction = await Auction.findOneAndUpdate(
+    { _id: req.params.id },
+    req.body,
+    { new: true }
+  );
+
+  if (!auction)
+    return res.status(404).send("Auction with given ID does not exist");
+
+  await auction.save(auction);
+  res.send(auction);
+});
+
 router.delete("/:id", async (req, res) => {
   const auction = await Auction.findByIdAndRemove(req.params.id, {
     useFindAndModify,

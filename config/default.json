@@ -1,4 +1,4 @@
 {
-  "db": "mongodb://localhost/TibiaCharBaazar",
+  "db": "mongodb://localhost/TibiaCharBazaar",
   "port": "3900"
 }

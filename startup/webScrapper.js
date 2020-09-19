@@ -6,6 +6,7 @@ const {
   getCharacterByName,
   getCharacters,
 } = require("../services/characterService");
+const { createAuction, updateAuction } = require("../services/auctionsService");
 const {
   offertsPageCountScrapper,
   getAuctionsFromPage,
@@ -20,7 +21,7 @@ async function main() {
   );
 
   const offertsPageCount = await getOffersPageCount();
-  const currentOfferts = await getCurrentOfferts(offertsPageCount);
+  const currentOfferts = await getCurrentOfferts(3);
   const auctionsToUpdate = getAuctionsToUpdate(currentOfferts, auctionsInDb);
   await updateDbAuction(auctionsToUpdate);
 
@@ -56,8 +57,8 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
 
     if (!isInDb || isInDb.bidValue !== co.bidValue) {
       auctionsToUpdate.push({
-        oldValue: isInDb || {},
-        newValue: co,
+        dbData: isInDb || {},
+        webData: co,
       });
     }
   });
@@ -70,20 +71,29 @@ async function updateDbAuction(auctions) {
   for (var i = 0; i < auctions.length; i++) {
     const data = auctions[i];
     var character =
-      charactersInDb.find((c) => c.name === data.newValue.character.name) ||
+      charactersInDb.find((c) => c.name === data.webData.character.name) ||
       null;
     if (character === null) {
       var req = await getRequest(
-        `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${data.newValue.id}&source=overview`
+        `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${data.webData.id}&source=overview`
       );
 
       const details = getCharacterDetails(req);
-      character = data.newValue.character;
+      character = data.webData.character;
       character.skills = details.skills;
       character.imbuements = details.imbuements;
       character.charms = details.charms;
 
-      await createCharacter(character);
+      character = await createCharacter(character);
+      const { id, startDate, endDate, isBided, bidValue } = data.webData;
+      await createAuction({
+        id: id,
+        startDate: startDate,
+        endDate: endDate,
+        isBided: isBided,
+        bidValue: bidValue,
+        characterId: character._id,
+      });
     }
   }
 }

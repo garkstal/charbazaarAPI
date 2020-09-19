@@ -88,14 +88,14 @@ function scrapAuctionsDatesAndBid(cheerioData) {
 
   while (true) {
     const info = {};
-    info.start = new Date(
+    info.startDate = new Date(
       result[3],
       convertMonthShortcutToNumber(result[1]),
       result[2],
       result[4],
       result[5]
     );
-    info.end = new Date(
+    info.endDate = new Date(
       result[8],
       convertMonthShortcutToNumber(result[6]),
       result[7],
@@ -205,8 +205,8 @@ function getAuctionsFromPage(webContent) {
       character: auctionsCharacters[i],
       bidValue: auctionDatesAndBids[i].bidValue,
       isBided: auctionDatesAndBids[i].isBided,
-      auctionStart: auctionDatesAndBids[i].start,
-      auctionEnd: auctionDatesAndBids[i].end,
+      startDate: auctionDatesAndBids[i].startDate,
+      endDate: auctionDatesAndBids[i].endDate,
     };
 
     auctions.push(auction);
