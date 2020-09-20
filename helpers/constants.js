@@ -57,6 +57,12 @@ const imbuements = [
   "Powerful Vibrancy",
 ];
 
+const auctionBidStatuses = {
+  auctionNotBided: "Not Bided",
+  auctionBided: "Bided",
+};
+
+module.exports.auctionBidStatuses = auctionBidStatuses;
 module.exports.skills = skills;
 module.exports.charms = charms;
 module.exports.imbuements = imbuements;

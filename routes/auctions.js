@@ -25,14 +25,23 @@ router.post("/", async (req, res) => {
   if (auction)
     return res.status(400).send("Auction with this ID alread exist.");
 
-  const { id, startDate, endDate, isBided, bidValue, characterId } = req.body;
+  const {
+    id,
+    startDate,
+    endDate,
+    bidInfo,
+    bidValue,
+    characterId,
+    status,
+  } = req.body;
   var _auction = new Auction({
     id: id,
     startDate: startDate,
     endDate: endDate,
-    isBided: isBided,
+    bidInfo: bidInfo,
     bidValue: bidValue,
     characterId: characterId,
+    status: status,
   });
 
   await _auction.save(_auction);

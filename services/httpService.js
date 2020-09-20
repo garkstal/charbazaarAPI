@@ -16,7 +16,14 @@ async function getRequest(url) {
     console.log("Response recived from: ", url);
     return data;
   } catch (error) {
-    console.log("Couldn't recive response from: ", url, error);
+    if (error.response) {
+      console.log("Couldn't recive RESPONSE from: ", url, error);
+    } else if (error.request) {
+      console.log("Couldn't send request to: ", url, error);
+    } else {
+      console.log(error);
+    }
+    await getRequest(url);
   }
 }
 

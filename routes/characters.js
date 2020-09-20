@@ -34,6 +34,7 @@ router.post("/", async (req, res) => {
     skills,
     imbuements,
     charms,
+    lastUpdate,
   } = req.body;
 
   var _character = new Character({
@@ -45,6 +46,7 @@ router.post("/", async (req, res) => {
     skills: skills,
     imbuements: imbuements,
     charms: charms,
+    lastUpdate: lastUpdate,
   });
 
   await _character.save(_character);

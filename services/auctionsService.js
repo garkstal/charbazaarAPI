@@ -5,14 +5,14 @@ const axios = require("axios");
 
 async function createAuction(auction) {
   try {
-    console.log(auction);
     const { data } = await axios.post(endpoint, {
       id: auction.id,
       startDate: auction.startDate,
       endDate: auction.endDate,
-      isBided: auction.isBided,
+      bidInfo: auction.bidInfo,
       bidValue: auction.bidValue,
       characterId: auction.characterId,
+      status: auction.status,
     });
     console.log(`Created auction: ${data.id}`);
     return data;
@@ -24,12 +24,13 @@ async function createAuction(auction) {
 async function updateAuction(auction) {
   try {
     const { data } = await axios.put(endpoint + "/" + auction._id, {
-      id: id,
-      startDate: startDate,
-      endDate: endDate,
-      isBided: isBided,
-      bidValue: bidValue,
-      characterId: characterId,
+      id: auction.id,
+      startDate: auction.startDate,
+      endDate: auction.endDate,
+      bidInfo: auction.bidInfo,
+      bidValue: auction.bidValue,
+      characterId: auction.characterId,
+      status: auction.status,
     });
     console.log(`Auction updated, ID: ${auction.id}`);
     return data;

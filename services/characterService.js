@@ -4,6 +4,7 @@ const endpoint = "http://localhost:" + port + "/api/characters";
 const axios = require("axios");
 
 async function createCharacter(c) {
+  console.log(`Create Character Service, DATA: ${c.name}`);
   try {
     const { data } = await axios.post(endpoint, {
       name: c.name,
@@ -14,6 +15,7 @@ async function createCharacter(c) {
       skills: c.skills,
       imbuements: c.imbuements,
       charms: c.charms,
+      lastUpdate: c.lastUpdate,
     });
     console.log("Creating character: ", data.name);
     return data;

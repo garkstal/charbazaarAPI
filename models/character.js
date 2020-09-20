@@ -37,6 +37,10 @@ const characterSchema = new mongoose.Schema({
   charms: {
     type: [charmSchema],
   },
+  lastUpdate: {
+    type: String,
+    required: true,
+  },
 });
 
 const Character = mongoose.model("Character", characterSchema);

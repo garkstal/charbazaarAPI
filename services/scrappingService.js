@@ -1,6 +1,7 @@
 const cheerio = require("cheerio");
 const {
-  offertsPagePattern,
+  currentOffertsPagePattern,
+  pastOffertsPagePattern,
   auctionIdPattern,
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
@@ -9,16 +10,25 @@ const {
   obtainedCharmsPattern,
   imbuementsPattern,
 } = require("../helpers/regexPatterns");
-const { convertMonthShortcutToNumber } = require("../utils/utils");
-const { charms, imbuements } = require("../helpers/constants");
+const {
+  convertMonthShortcutToNumber,
+  createDateObject,
+} = require("../utils/utils");
+const {
+  charms,
+  imbuements,
+  auctionBidStatuses,
+} = require("../helpers/constants");
 
-function offertsPageCountScrapper(data) {
+function offertsPageCountScrapper(data, type) {
+  const pattern =
+    type === "current" ? currentOffertsPagePattern : pastOffertsPagePattern;
   const $ = cheerio.load(data);
   var offertsPageCount = 0;
   $("a").each((i, e) => {
     if (e.attribs.href) {
       var _url = e.attribs.href;
-      const result = _url.match(offertsPagePattern);
+      const result = _url.match(pattern);
 
       if (result) {
         offertsPageCount =
@@ -88,14 +98,15 @@ function scrapAuctionsDatesAndBid(cheerioData) {
 
   while (true) {
     const info = {};
-    info.startDate = new Date(
+    info.startDate = createDateObject(
       result[3],
       convertMonthShortcutToNumber(result[1]),
       result[2],
       result[4],
       result[5]
     );
-    info.endDate = new Date(
+
+    info.endDate = createDateObject(
       result[8],
       convertMonthShortcutToNumber(result[6]),
       result[7],
@@ -103,9 +114,11 @@ function scrapAuctionsDatesAndBid(cheerioData) {
       result[10]
     );
 
-    info.isBided = result[11] === "Minimum Bid" ? true : false;
+    info.bidInfo =
+      result[11] === "Minimum Bid"
+        ? auctionBidStatuses.auctionNotBided
+        : auctionBidStatuses.auctionBided;
     info.bidValue = Number(result[12].replace(",", ""));
-
     data.push(info);
 
     if (result.input.length === result[0].length) {
@@ -204,7 +217,7 @@ function getAuctionsFromPage(webContent) {
       id: auctionsIds[i],
       character: auctionsCharacters[i],
       bidValue: auctionDatesAndBids[i].bidValue,
-      isBided: auctionDatesAndBids[i].isBided,
+      bidInfo: auctionDatesAndBids[i].bidInfo,
       startDate: auctionDatesAndBids[i].startDate,
       endDate: auctionDatesAndBids[i].endDate,
     };

@@ -13,8 +13,8 @@ const auctionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  isBided: {
-    type: Boolean,
+  bidInfo: {
+    type: String,
     required: true,
   },
   bidValue: {
@@ -25,6 +25,10 @@ const auctionSchema = new mongoose.Schema({
   characterId: {
     type: mongoose.Types.ObjectId,
     ref: "Character",
+  },
+  status: {
+    type: String,
+    required: true,
   },
 });
 
