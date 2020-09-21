@@ -17,12 +17,13 @@ async function getRequest(url) {
     return data;
   } catch (error) {
     if (error.response) {
-      console.log("Couldn't recive RESPONSE from: ", url, error);
+      console.log("Couldn't recive RESPONSE from: ", url);
     } else if (error.request) {
-      console.log("Couldn't send request to: ", url, error);
+      console.log("Couldn't send request to: ", url);
     } else {
       console.log(error);
     }
+    console.log("RENEWING REQUEST: ", url);
     await getRequest(url);
   }
 }

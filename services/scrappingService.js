@@ -70,6 +70,7 @@ function scrapCharacterData(cheerioData) {
   const headers = cheerioData(".AuctionHeader").text();
   var result = headers.match(auctionHeaderPattern);
 
+  console.log(result);
   while (true) {
     const char = {};
     char.name = result[1];

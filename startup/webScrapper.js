@@ -1,4 +1,3 @@
-const c = require("config");
 const config = require("config");
 const { getRequest, dbGetRequest } = require("../services/httpService");
 const {
@@ -12,6 +11,9 @@ const {
   getAuctionsFromPage,
   getCharacterDetails,
 } = require("../services/scrappingService");
+const { default: Axios } = require("axios");
+const pLimit = require("p-limit");
+const limi = pLimit(5);
 
 async function main() {
   const port = config.get("port");
@@ -35,10 +37,10 @@ async function main() {
   };
 
   const pagesCount = await getOffertsPageCount(pageData.url, pageData.type);
-  const offerts = await getOfferts(pagesCount, pageData.query);
-  const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
+  const offerts = await getOfferts(5, pageData.query);
+  /* const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
   await updateDbAuction(auctionsToUpdate, pageData.type);
-  console.log("FInished");
+  console.log("FInished");*/
 }
 
 async function getOffertsPageCount(url, type) {
@@ -48,14 +50,30 @@ async function getOffertsPageCount(url, type) {
 }
 
 async function getOfferts(offertsPageCount, query, type) {
-  const offerts = [];
+  const limit = pLimit(15);
+  const urls = [];
   for (let index = 1; index <= offertsPageCount; index++) {
-    var offertsPage = await getRequest(query + index);
-
-    const offertsFromIndexPage = getAuctionsFromPage(offertsPage, type);
-    offerts.push(...offertsFromIndexPage);
+    urls.push(query + index);
   }
 
+  const requests = urls.map((url) => {
+    return limit(() => getRequest(url));
+  });
+
+  const sites = [];
+  await (async () => {
+    const result = await Promise.all(requests);
+    sites.push(result);
+  })();
+
+  const offerts = [];
+  sites.forEach((site) => {
+    // console.log(w);
+    const offertsFromIndexPage = getAuctionsFromPage(site, type);
+    offerts.push(...offertsFromIndexPage);
+  });
+
+  console.log(offerts);
   return offerts;
 }
 
@@ -80,10 +98,13 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
 
 async function updateDbAuction(auctions, type) {
   const charactersInDb = await getCharacters();
+  const createdCharacters = [];
   for (var i = 0; i < auctions.length; i++) {
     const data = auctions[i];
     console.log(`Updating DB auctions for ${data.character.name}`);
-    var character = charactersInDb.find((c) => c.name === data.character.name);
+    var character =
+      charactersInDb.find((c) => c.name === data.character.name) ||
+      createdCharacters.find((c) => c.name === data.character.name);
 
     if (!character) {
       const url =
@@ -100,6 +121,7 @@ async function updateDbAuction(auctions, type) {
       character.lastUpdate = Date.now();
 
       character = await createCharacter(character);
+      createdCharacters.push(character);
     }
 
     if (type === "past") {
