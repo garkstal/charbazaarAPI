@@ -1,4 +1,6 @@
 const axios = require("axios");
+const pLimit = require("p-limit");
+const config = require("config");
 
 async function getRequest(url) {
   var options = {
@@ -13,7 +15,7 @@ async function getRequest(url) {
   try {
     console.log("Starting request for: ", url);
     const { data } = await axios.get(url, options);
-    console.log("Response recived from: ", url);
+    console.log("Response recived from: ", url, typeof data);
     return data;
   } catch (error) {
     if (error.response) {
@@ -37,5 +39,22 @@ async function dbGetRequest(uri) {
   }
 }
 
+async function parallelGetRequest(urls, _limit) {
+  const __limit = _limit || config.get("requestsLimit");
+  const limit = pLimit(__limit);
+  const requests = urls.map((url) => {
+    return limit(() => getRequest(url));
+  });
+
+  const data = [];
+  await (async () => {
+    const results = await Promise.all(requests);
+    results.forEach((r) => data.push(r));
+  })();
+
+  return data;
+}
+
 module.exports.getRequest = getRequest;
 module.exports.dbGetRequest = dbGetRequest;
+module.exports.parallelGetRequest = parallelGetRequest;

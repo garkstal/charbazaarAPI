@@ -1,5 +1,9 @@
 const config = require("config");
-const { getRequest, dbGetRequest } = require("../services/httpService");
+const {
+  getRequest,
+  dbGetRequest,
+  parallelGetRequest,
+} = require("../services/httpService");
 const {
   createCharacter,
   getCharacterByName,
@@ -9,11 +13,8 @@ const { createAuction, updateAuction } = require("../services/auctionsService");
 const {
   offertsPageCountScrapper,
   getAuctionsFromPage,
-  getCharacterDetails,
+  getCharacterFullInfo,
 } = require("../services/scrappingService");
-const { default: Axios } = require("axios");
-const pLimit = require("p-limit");
-const limi = pLimit(5);
 
 async function main() {
   const port = config.get("port");
@@ -37,10 +38,10 @@ async function main() {
   };
 
   const pagesCount = await getOffertsPageCount(pageData.url, pageData.type);
-  const offerts = await getOfferts(5, pageData.query);
-  /* const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
-  await updateDbAuction(auctionsToUpdate, pageData.type);
-  console.log("FInished");*/
+  const offerts = await getOfferts(50, pageData.query);
+  const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
+  await createAuctions(auctionsToUpdate, pageData.type);
+  console.log("FInished");
 }
 
 async function getOffertsPageCount(url, type) {
@@ -50,30 +51,21 @@ async function getOffertsPageCount(url, type) {
 }
 
 async function getOfferts(offertsPageCount, query, type) {
-  const limit = pLimit(15);
   const urls = [];
   for (let index = 1; index <= offertsPageCount; index++) {
     urls.push(query + index);
   }
 
-  const requests = urls.map((url) => {
-    return limit(() => getRequest(url));
-  });
+  const sites = await parallelGetRequest(urls);
 
-  const sites = [];
-  await (async () => {
-    const result = await Promise.all(requests);
-    sites.push(result);
-  })();
-
+  console.log("Scrapping data from readed pages started...");
   const offerts = [];
   sites.forEach((site) => {
-    // console.log(w);
     const offertsFromIndexPage = getAuctionsFromPage(site, type);
     offerts.push(...offertsFromIndexPage);
   });
+  console.log("Scrapping data from readed pages finished");
 
-  console.log(offerts);
   return offerts;
 }
 
@@ -81,7 +73,9 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
   console.log("Removing unnecessary auctions, started...");
   const auctionsToUpdate = [];
   currentOfferts.forEach((co) => {
-    console.log(`Checking offert of: ID ${co.id}, Char Name: ${co.name}`);
+    console.log(
+      `Checking offert of: ID ${co.id}, Char Name: ${co.character.name}`
+    );
     const isInDb = auctionsInDb.find((a) => a.id === co.id);
 
     if (!isInDb) {
@@ -96,33 +90,47 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
   return auctionsToUpdate;
 }
 
-async function updateDbAuction(auctions, type) {
-  const charactersInDb = await getCharacters();
+async function createCharacters(data) {
+  const urls = [];
+  data.forEach((d) => {
+    const url =
+      d.type === "current"
+        ? `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${d.auctionId}&source=overview`
+        : `https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades&page=details&auctionid=${d.auctionId}&source=overview`;
+    urls.push(url);
+  });
+
+  const characters = await parallelGetRequest(urls, 3);
   const createdCharacters = [];
+  for (var i = 0; i < characters.length; i++) {
+    const data = getCharacterFullInfo(characters[i]);
+    data.lastUpdate = Date.now();
+    const character = await createCharacter(data);
+    createdCharacters.push(character);
+  }
+
+  return createdCharacters;
+}
+
+async function createAuctions(auctions, type) {
+  const charactersInDb = await getCharacters();
+  const missingCharactersInDb = [];
+
+  auctions.forEach((a) => {
+    if (!charactersInDb.find((c) => c.name === a.character.name)) {
+      missingCharactersInDb.push({ auctionId: a.id, type: type });
+    }
+  });
+
+  const newCharacters = await createCharacters(missingCharactersInDb);
+  const updatedCharactersDb = [...charactersInDb, ...newCharacters];
+
   for (var i = 0; i < auctions.length; i++) {
     const data = auctions[i];
     console.log(`Updating DB auctions for ${data.character.name}`);
-    var character =
-      charactersInDb.find((c) => c.name === data.character.name) ||
-      createdCharacters.find((c) => c.name === data.character.name);
-
-    if (!character) {
-      const url =
-        type === "current"
-          ? `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${data.id}&source=overview`
-          : `https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades&page=details&auctionid=${data.id}&source=overview`;
-      var req = await getRequest(url);
-
-      const details = getCharacterDetails(req);
-      character = data.character;
-      character.skills = details.skills;
-      character.imbuements = details.imbuements;
-      character.charms = details.charms;
-      character.lastUpdate = Date.now();
-
-      character = await createCharacter(character);
-      createdCharacters.push(character);
-    }
+    var character = updatedCharactersDb.find(
+      (c) => c.name === data.character.name
+    );
 
     if (type === "past") {
       const { id, startDate, endDate, bidInfo, bidValue } = data;

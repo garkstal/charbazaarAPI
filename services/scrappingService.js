@@ -2,6 +2,7 @@ const cheerio = require("cheerio");
 const {
   currentOffertsPagePattern,
   pastOffertsPagePattern,
+  auctionHeaderPatternDetailed,
   auctionIdPattern,
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
@@ -48,48 +49,48 @@ function offertsPageCountScrapper(data, type) {
   return offertsPageCount;
 }
 
-function scrapAuctionIds(cheerioData) {
-  const auctionsIds = [];
-  cheerioData("a").each((i, e) => {
-    if (e.attribs.href) {
-      var _url = e.attribs.href;
-      const result = _url.match(auctionIdPattern);
-
-      if (result) {
-        if (!auctionsIds.includes(Number(result[1])))
-          auctionsIds.push(Number(result[1]));
-      }
-    }
-  });
-
-  return auctionsIds;
-}
-
-function scrapCharacterData(cheerioData) {
+function scrapCharacterData(webContent) {
+  console.log("Scrapping character basic data started.");
   const charactersData = [];
-  const headers = cheerioData(".AuctionHeader").text();
-  var result = headers.match(auctionHeaderPattern);
+  var result = webContent.match(auctionHeaderPattern);
 
-  console.log(result);
   while (true) {
-    const char = {};
-    char.name = result[1];
-    char.level = Number(result[2]);
-    char.vocation = result[3];
-    char.gender = result[4];
-    char.world = result[5];
+    const data = {
+      character: {},
+    };
 
-    charactersData.push(char);
+    data.id = Number(result[1]);
+    data.character.name = result[2];
+    data.character.level = Number(result[3]);
+    data.character.vocation = result[4];
+    data.character.gender = result[5];
+    data.character.world = result[6];
 
-    if (result.input.length === result[0].length) {
-      break;
-    } else {
-      result = result.input.substr(result[0].length, result.input.length);
-      result = result.match(auctionHeaderPattern);
-    }
+    charactersData.push(data);
+
+    newString = result.input.substr(result.index + result[0].length);
+    result = newString.match(auctionHeaderPattern);
+
+    if (!result) break;
   }
+  console.log("Scrapping character basic data finished.");
 
   return charactersData;
+}
+
+function scrapCharacterDataDetailed(webContent) {
+  console.log("Scrapping detailed data character started.");
+  const result = webContent.match(auctionHeaderPatternDetailed);
+
+  const character = {};
+  character.name = result[1];
+  character.level = Number(result[2]);
+  character.vocation = result[3];
+  character.gender = result[4];
+  character.world = result[5];
+
+  console.log("Scrapping detailed data character finished.");
+  return character;
 }
 
 function scrapAuctionsDatesAndBid(cheerioData) {
@@ -134,6 +135,7 @@ function scrapAuctionsDatesAndBid(cheerioData) {
 }
 
 function scrapCharacterSkills(webContent) {
+  console.log("Scrapping character skills data started.");
   var result = webContent.match(characterSkillsPattern);
   const skills = [];
 
@@ -146,10 +148,13 @@ function scrapCharacterSkills(webContent) {
     if (!result) break;
   }
 
+  console.log("Scrapping character skills data finished.");
+
   return skills;
 }
 
 function scrapCharacterCharms(webContent) {
+  console.log("Scrapping character charms data started.");
   var result = webContent.match(charmPointsPattern);
 
   const data = {
@@ -175,10 +180,12 @@ function scrapCharacterCharms(webContent) {
 
   data.available = available;
 
+  console.log("Scrapping character charms data finished.");
   return data;
 }
 
 function scrapCharacterImbuements(webContent) {
+  console.log("Scrapping character imbuements data started.");
   const imbus = [];
   result = webContent.match(imbuementsPattern);
   if (result) {
@@ -194,29 +201,34 @@ function scrapCharacterImbuements(webContent) {
     }
   }
 
+  console.log("Scrapping character imbuements data finished.");
   return imbus;
 }
 
-function getCharacterDetails(webContent) {
+function getCharacterFullInfo(webContent) {
+  const character = scrapCharacterDataDetailed(webContent);
   const skills = scrapCharacterSkills(webContent);
   const charms = scrapCharacterCharms(webContent);
   const imbuements = scrapCharacterImbuements(webContent);
 
-  return { skills: skills, charms: charms, imbuements: imbuements };
+  character.skills = skills;
+  character.charms = charms;
+  character.imbuements = imbuements;
+
+  return character;
 }
 
 function getAuctionsFromPage(webContent) {
   const $ = cheerio.load(webContent);
 
-  var auctionsIds = scrapAuctionIds($);
-  var auctionsCharacters = scrapCharacterData($);
+  var auctionsCharacters = scrapCharacterData(webContent);
   var auctionDatesAndBids = scrapAuctionsDatesAndBid($);
 
   var auctions = [];
-  for (var i = 0; i < auctionsIds.length; i++) {
+  for (var i = 0; i < auctionsCharacters.length; i++) {
     var auction = {
-      id: auctionsIds[i],
-      character: auctionsCharacters[i],
+      id: auctionsCharacters[i].id,
+      character: auctionsCharacters[i].character,
       bidValue: auctionDatesAndBids[i].bidValue,
       bidInfo: auctionDatesAndBids[i].bidInfo,
       startDate: auctionDatesAndBids[i].startDate,
@@ -231,4 +243,4 @@ function getAuctionsFromPage(webContent) {
 
 module.exports.offertsPageCountScrapper = offertsPageCountScrapper;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;
-module.exports.getCharacterDetails = getCharacterDetails;
+module.exports.getCharacterFullInfo = getCharacterFullInfo;
