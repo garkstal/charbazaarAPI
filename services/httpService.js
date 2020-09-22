@@ -50,6 +50,7 @@ async function parallelGetRequest(urls, _limit) {
   await (async () => {
     const results = await Promise.all(requests);
     results.forEach((r) => data.push(r));
+    console.log(`Finalized: ${results.length} requests`);
   })();
 
   return data;

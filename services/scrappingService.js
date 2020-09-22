@@ -206,6 +206,7 @@ function scrapCharacterImbuements(webContent) {
 }
 
 function getCharacterFullInfo(webContent) {
+  console.log(webContent.substr(0, 100));
   const character = scrapCharacterDataDetailed(webContent);
   const skills = scrapCharacterSkills(webContent);
   const charms = scrapCharacterCharms(webContent);
