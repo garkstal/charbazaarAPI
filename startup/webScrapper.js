@@ -38,7 +38,7 @@ async function main() {
   };
 
   const pagesCount = await getOffertsPageCount(pageData.url, pageData.type);
-  const offerts = await getOfferts(50, pageData.query);
+  const offerts = await getOfferts(pagesCount, pageData.query);
   const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
   await createAuctions(auctionsToUpdate, pageData.type);
   console.log("FInished");
@@ -73,9 +73,6 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
   console.log("Removing unnecessary auctions, started...");
   const auctionsToUpdate = [];
   currentOfferts.forEach((co) => {
-    console.log(
-      `Checking offert of: ID ${co.id}, Char Name: ${co.character.name}`
-    );
     const isInDb = auctionsInDb.find((a) => a.id === co.id);
 
     if (!isInDb) {
@@ -91,16 +88,19 @@ function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
 }
 
 async function createCharacters(data) {
+  console.log("Creating characters for scrapped auctions");
   const urls = [];
-  data.forEach((d) => {
+  data.forEach((value, index) => {
     const url =
-      d.type === "current"
-        ? `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${d.auctionId}&source=overview`
-        : `https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades&page=details&auctionid=${d.auctionId}&source=overview`;
+      value.type === "current"
+        ? `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${value.auctionId}&source=overview`
+        : `https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades&page=details&auctionid=${value.auctionId}&source=overview`;
     urls.push(url);
   });
 
-  const characters = await parallelGetRequest(urls, 3);
+  const characters = await parallelGetRequest(urls, 1);
+
+  characters.forEach((c) => console.log(c.length));
   const createdCharacters = [];
   for (var i = 0; i < characters.length; i++) {
     const data = getCharacterFullInfo(characters[i]);

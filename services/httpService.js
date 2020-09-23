@@ -15,7 +15,7 @@ async function getRequest(url) {
   try {
     console.log("Starting request for: ", url);
     const { data } = await axios.get(url, options);
-    console.log("Response recived from: ", url, typeof data);
+    console.log("Response recived from: ", url);
     return data;
   } catch (error) {
     if (error.response) {
@@ -26,7 +26,7 @@ async function getRequest(url) {
       console.log(error);
     }
     console.log("RENEWING REQUEST: ", url);
-    await getRequest(url);
+    return await getRequest(url);
   }
 }
 
