@@ -3,6 +3,15 @@ const port = config.get("port");
 const endpoint = "http://localhost:" + port + "/api/auctions";
 const axios = require("axios");
 
+async function getAuctions() {
+  try {
+    const { data } = await axios.get(endpoint);
+    return data;
+  } catch (error) {
+    console.log(error.response.data);
+  }
+}
+
 async function createAuction(auction) {
   try {
     const { data } = await axios.post(endpoint, {
@@ -41,3 +50,4 @@ async function updateAuction(auction) {
 
 module.exports.createAuction = createAuction;
 module.exports.updateAuction = updateAuction;
+module.exports.getAuctions = getAuctions;

@@ -1,5 +1,5 @@
 {
   "db": "mongodb://localhost/TibiaCharBazaar",
   "port": "3900",
-  "requestsLimit": 13
+  "requestsLimit": 16
 }
