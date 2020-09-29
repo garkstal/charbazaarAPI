@@ -10,6 +10,8 @@ var characterSkillsPattern = /<td class=\"LabelColumn\"><b>([a-zA-Z\s]*)<\/b><\/
 var charmPointsPattern = /<span class=\"LabelV\">Charm Expansion:<\/span><div style=\"float:right; text-align: right;\"><img src=\"https:\/\/static\.tibia\.com\/images\/premiumfeatures\/icon_(?:yes|no)\.png\"\s?\/?>\s?(yes|no)<\/div><\/td><\/tr><tr class=\"Even\"><td><span class=\"LabelV\">Available Charm Points:<\/span><div style=\"float:right; text-align: right;\">([0-9,]*)<\/div><\/td><\/tr><tr class=\"Odd\"><td><span class=\"LabelV\">Spent Charm Points:<\/span><div style=\"float:right; text-align: right;\">([0-9,]*)<\/div>/;
 var obtainedCharmsPattern = /<tr class=\"(?:Odd|Even)\"><td style=\"text-align: right; white-space: nowrap;\">[0-9\,]*<\/td><td>([a-zA-Z\\s\\']*)<\/td><\/tr>/;
 var imbuementsPattern = /<tr class=\"(?:Odd|Even)\"><td>([a-zA-Z\s]*)<\/td><\/tr>/;
+var itemsPattern = /<tr>\n?\s?<td><a\s?href=\"\/wiki\/[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_\%]*\"\s?title=\"[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*\">([A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*)<\/a><\/td>\n?\s?<td>([0-9\s\,]*)<\/td>\n?<\/tr>/;
+var storeItemsPattern = /<td>\s?<a href=\"\/wiki\/[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*\"\s?title=\"[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*\">([A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*)<\/a>\s?<\/td><td>\s?<a href=\".*<\/a>\s? <\/td><td>\s?([0-9]*)\s?/;
 
 module.exports.currentOffertsPagePattern = currentOffertsPagePattern;
 module.exports.pastOffertsPagePattern = pastOffertsPagePattern;
@@ -21,3 +23,7 @@ module.exports.characterSkillsPattern = characterSkillsPattern;
 module.exports.charmPointsPattern = charmPointsPattern;
 module.exports.obtainedCharmsPattern = obtainedCharmsPattern;
 module.exports.imbuementsPattern = imbuementsPattern;
+module.exports.itemsPattern = itemsPattern;
+module.exports.storeItemsPattern = storeItemsPattern;
+
+//<td>\s?<a href=\"\/wiki\/[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*\"\s?title=\"[A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*\">([A-Za-z\s\'-\\u0080-\\uFFFF\(\)\_]*)<\/a>\s?<\/td><td>\s?<a href=\".*<\/a>\s? <\/td><td>\s?([0-9]*)\s?

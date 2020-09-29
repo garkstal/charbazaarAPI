@@ -3,13 +3,13 @@ const {
   currentOffertsPagePattern,
   pastOffertsPagePattern,
   auctionHeaderPatternDetailed,
-  auctionIdPattern,
   auctionHeaderPattern,
   auctionDatesAndBidPattern,
   characterSkillsPattern,
   charmPointsPattern,
   obtainedCharmsPattern,
   imbuementsPattern,
+  itemsPattern,
 } = require("../helpers/regexPatterns");
 const {
   convertMonthShortcutToNumber,
@@ -120,7 +120,7 @@ function scrapAuctionsDatesAndBid(cheerioData) {
       result[11] === "Minimum Bid"
         ? auctionBidStatuses.auctionNotBided
         : auctionBidStatuses.auctionBided;
-    info.bidValue = Number(result[12].replace(",", ""));
+    info.bidValue = Number(result[12].replace(/,/g, ""));
     data.push(info);
 
     if (result.input.length === result[0].length) {
@@ -241,6 +241,48 @@ function getAuctionsFromPage(webContent) {
   return auctions;
 }
 
+function getItemsFromWiki(webContent) {
+  console.log("Scrapping item data started.");
+  const items = [];
+  var result = webContent.match(itemsPattern);
+
+  while (true) {
+    const item = {};
+
+    item.name = result[1];
+    item.ids = [];
+
+    var ids = result[2];
+    if (ids.indexOf(",") > -1) {
+      ids = ids.replace(/ /g, "");
+      while (ids.length > 0) {
+        if (ids.indexOf(",") > -1) {
+          const id = ids.substr(0, ids.indexOf(","));
+          item.ids.push(Number(id));
+          ids = ids.slice(ids.indexOf(",") + 1);
+        } else {
+          const id = ids.substr(0);
+          item.ids.push(Number(id));
+          ids = "";
+        }
+      }
+    } else {
+      item.ids.push(Number(result[2]));
+    }
+
+    items.push(item);
+
+    newString = result.input.substr(result.index + result[0].length);
+    result = newString.match(itemsPattern);
+
+    if (!result) break;
+  }
+  console.log("Scrapping item data finished.");
+
+  return items;
+}
+
 module.exports.offertsPageCountScrapper = offertsPageCountScrapper;
 module.exports.getAuctionsFromPage = getAuctionsFromPage;
 module.exports.getCharacterFullInfo = getCharacterFullInfo;
+module.exports.getItemsFromWiki = getItemsFromWiki;

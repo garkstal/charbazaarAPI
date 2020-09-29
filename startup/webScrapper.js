@@ -1,39 +1,17 @@
-const config = require("config");
-const {
-  getRequest,
-  dbGetRequest,
-  parallelGetRequest,
-} = require("../services/httpService");
+const { getRequest, parallelGetRequest } = require("../services/httpService");
 const {
   createCharacter,
-  getCharacterByName,
   getCharacters,
 } = require("../services/characterService");
-const {
-  createAuction,
-  updateAuction,
-  getAuctions,
-} = require("../services/auctionsService");
+const { createAuction, getAuctions } = require("../services/auctionsService");
 const {
   offertsPageCountScrapper,
   getAuctionsFromPage,
   getCharacterFullInfo,
+  getItemsFromWiki,
 } = require("../services/scrappingService");
 
 async function main() {
-  const port = config.get("port");
-
-  const auctionsInDb = await dbGetRequest(
-    "http://localhost:" + port + "/api/auctions"
-  );
-  /*
-  const offertsPageCount = await getOffersPageCount();
-  const currentOfferts = await getCurrentOfferts(3);
-  const auctionsToUpdate = getAuctionsToUpdate(currentOfferts, auctionsInDb);
-  await updateDbAuction(auctionsToUpdate);
-
-  console.log("Scrapping website finished.");*/
-
   const pageData = {
     url: "https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades",
     query:
@@ -44,10 +22,6 @@ async function main() {
   const pagesCount = await getOffertsPageCount(pageData.url, pageData.type);
   const offerts = await getOfferts(pagesCount, pageData.query);
   await processOfferts(offerts, pageData.type);
-  //const auctionsToUpdate = getAuctionsToUpdate(offerts, auctionsInDb);
-  //offerts = [];
-  //await createAuctions(auctionsToUpdate, pageData.type);
-  //console.log("FInished");
 }
 
 async function getOffertsPageCount(url, type) {
@@ -128,82 +102,14 @@ async function processOfferts(offerts, type) {
   }
 }
 
-function getAuctionsToUpdate(currentOfferts, auctionsInDb) {
-  console.log("Removing unnecessary auctions, started...");
-  const auctionsToUpdate = [];
-  currentOfferts.forEach((co) => {
-    const isInDb = auctionsInDb.find((a) => a.id === co.id);
+async function downloadItemsData() {
+  const url = "https://tibia.fandom.com/wiki/Item_IDs";
+  const wikiPageData = await getRequest(url);
 
-    if (!isInDb) {
-      //Double check cuz website is refreshing
-      const isAlreadyAdded = auctionsToUpdate.find((a) => a.id === co.id);
+  const items = getItemsFromWiki(wikiPageData);
 
-      if (!isAlreadyAdded) auctionsToUpdate.push(co);
-    }
-  });
-  console.log("Removing unnecessary auctions, finished...");
-
-  return auctionsToUpdate;
-}
-
-async function createCharacters(data) {
-  console.log("Creating characters for scrapped auctions");
-  const urls = [];
-  data.forEach((value, index) => {
-    const url =
-      value.type === "current"
-        ? `https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${value.auctionId}&source=overview`
-        : `https://www.tibia.com/charactertrade/?subtopic=pastcharactertrades&page=details&auctionid=${value.auctionId}&source=overview`;
-    urls.push(url);
-  });
-
-  const characters = await parallelGetRequest(urls, 1);
-
-  characters.forEach((c) => console.log(c.length));
-  const createdCharacters = [];
-  for (var i = 0; i < characters.length; i++) {
-    const data = getCharacterFullInfo(characters[i]);
-    data.lastUpdate = Date.now();
-    const character = await createCharacter(data);
-    createdCharacters.push(character);
-  }
-
-  return createdCharacters;
-}
-
-async function createAuctions(auctions, type) {
-  const charactersInDb = await getCharacters();
-  const missingCharactersInDb = [];
-
-  auctions.forEach((a) => {
-    if (!charactersInDb.find((c) => c.name === a.character.name)) {
-      missingCharactersInDb.push({ auctionId: a.id, type: type });
-    }
-  });
-
-  const newCharacters = await createCharacters(missingCharactersInDb);
-  const updatedCharactersDb = [...charactersInDb, ...newCharacters];
-
-  for (var i = 0; i < auctions.length; i++) {
-    const data = auctions[i];
-    console.log(`Updating DB auctions for ${data.character.name}`);
-    var character = updatedCharactersDb.find(
-      (c) => c.name === data.character.name
-    );
-
-    if (type === "past") {
-      const { id, startDate, endDate, bidInfo, bidValue } = data;
-      await createAuction({
-        id: id,
-        startDate: startDate,
-        endDate: endDate,
-        bidInfo: bidInfo,
-        bidValue: bidValue,
-        characterId: character._id,
-        status: "Finished",
-      });
-    }
-  }
+  console.log(items.find((i) => i.name === "Magnificent Trunk"));
 }
 
 module.exports.main = main;
+module.exports.downloadItemsData = downloadItemsData;

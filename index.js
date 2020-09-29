@@ -1,7 +1,8 @@
 const express = require("express");
 const app = express();
 const config = require("config");
-const { main } = require("./startup/webScrapper");
+const { main, downloadItemsData } = require("./startup/webScrapper");
+const { retrieveData } = require("./utils/auctionReader");
 
 require("./startup/db")();
 require("./startup/cors")(app);
@@ -13,4 +14,5 @@ app.listen(port, () => {
   console.log(`Server runnig at port ${port}/`);
 });
 
-main();
+//downloadItemsData();
+//retrieveData();

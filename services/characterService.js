@@ -33,6 +33,15 @@ async function getCharacters() {
   }
 }
 
+async function getCharacterById(id) {
+  try {
+    const { data } = await axios.get(endpoint + "/" + id);
+    return data;
+  } catch (error) {
+    return error.response.data;
+  }
+}
+
 async function getCharacterByName(name) {
   try {
     const { data } = await axios.get(endpoint);
@@ -46,3 +55,4 @@ async function getCharacterByName(name) {
 module.exports.createCharacter = createCharacter;
 module.exports.getCharacterByName = getCharacterByName;
 module.exports.getCharacters = getCharacters;
+module.exports.getCharacterById = getCharacterById;
